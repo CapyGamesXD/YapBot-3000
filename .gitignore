@@ -27,8 +27,15 @@ go.work.sum
 
 # env file
 .env
+<<<<<<< HEAD
 training.txt
 model.json
 # Editor/IDE
 # .idea/
 # .vscode/
+=======
+
+# Editor/IDE
+# .idea/
+# .vscode/
+>>>>>>> 5630d1a7d87332d29244f852d294bad6254abf78
