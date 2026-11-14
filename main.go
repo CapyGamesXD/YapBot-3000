@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand/v2"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -25,7 +26,8 @@ func trainModel(wordMap map[string][]string, words []string) {
 	}
 	fmt.Println("Training took:", time.Since(start))
 }
-func runModel(wordMap map[string][]string, outputLength int, words []string) {
+func runModel(wordMap map[string][]string, words []string) (fortune string) {
+
 	index := rand.IntN(len(words) - 2)
 	word1 := words[index]
 	for string(word1[len(word1)-1]) != "." {
@@ -35,22 +37,26 @@ func runModel(wordMap map[string][]string, outputLength int, words []string) {
 	index += 1
 	word1 = words[index]
 	word2 := words[index+1]
-	fmt.Print(word1 + " " + word2 + " ")
-	for i := 0; i < outputLength; i++ {
+	fortune += (word1 + " " + word2 + " ")
+
+	for {
 		followingWords := wordMap[word1+" "+word2]
 		if len(followingWords) == 0 {
 			break
 		}
 		nextWord := followingWords[rand.IntN(len(followingWords))]
-		fmt.Print(nextWord + " ")
+		fortune += (nextWord + " ")
+		if strings.Contains(nextWord, ".") {
+			break
+		}
 		word1 = word2
 		word2 = nextWord
-		time.Sleep(50 * time.Millisecond)
 	}
+	return fortune
 }
 func main() {
 	trainingData, err := os.ReadFile("training.txt")
-	outputLength := 20
+
 	if err != nil {
 		fmt.Println("Failed to read training file.", err)
 	}
@@ -64,5 +70,10 @@ func main() {
 	} else {
 		json.Unmarshal(mapFil, &wordMap)
 	}
-	runModel(wordMap, outputLength, words)
+	http.HandleFunc("GET /fortune", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"fortune": runModel(wordMap, words)})
+	})
+
+	http.ListenAndServe(":8080", nil)
 }
